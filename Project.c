@@ -1,3 +1,4 @@
+
 #include<stdio.h>
 #include <stdlib.h>
 struct node{
@@ -11,12 +12,14 @@ struct node{
 struct node * createNode(int, int, int);
 struct node * insertBack(struct node *, int, int, int);
 void swapNode(struct node *, struct node *);
-void sortLinkedList(struct node *);
+void sortBurstTime(struct node *);
 void FirstComeFirstServe(struct node *);
 void ShortestJobFirst(struct node *);
+void PriorityScheduling(struct node *);
 void Display(struct node *);
 void setPid(struct node *);
-struct node* copyLinkedList(struct node*);
+void sortPriority(struct node *);
+void sortPID(struct node *);
 
 int main(int argc, char* argv[])
 {
@@ -30,7 +33,6 @@ int main(int argc, char* argv[])
   }
   struct node *allProcesses = NULL;
   int b, a, p;
-	//Number of Processes part is removed because it is not necessary
   while(!feof(processes)){
   fscanf(processes,"%d:%d:%d\n", &b, &a, &p);
   allProcesses = insertBack(allProcesses, b, a, p);
@@ -39,40 +41,39 @@ int main(int argc, char* argv[])
   fclose(processes);
 	//taking data from file is finished//
 
-//Declaration of the linked list which is will used for sorting.
-	struct node *clone;
 	int choice;
 	do{
 		printf("\t\t********************************************************\n");
-	  	printf("\t\t\t\tCPU Scheduler Simulator\n");
-	  	printf("Choose the Scheduling Method\n");
-	  	printf("1) First Come, First Served Scheduling\n");
+	  printf("\t\t\t\tCPU Scheduler Simulator\n");
+	  printf("Choose the Scheduling Method\n");
+	  printf("1) First Come, First Served Scheduling\n");
 		printf("2) Shortest-Job-First Scheduling\n");
 		printf("3) Priority Scheduling\n");
 		printf("4) Round-Robin Scheduling\n");
 		printf("5)End Program\n");
 		printf("Option>");
-	 	 scanf("%d",&choice);
-	 switch (choice) {
+	  scanf("%d",&choice);
+	  switch (choice) {
 			 case 1:
-				system("clear");
-				printf("Scheduling Method: First Come, First Served Scheduling\n");
-				FirstComeFirstServe(allProcesses);
-				Display(allProcesses);
+					system("clear");
+					printf("Scheduling Method: First Come, First Served Scheduling\n");
+					FirstComeFirstServe(allProcesses);
+					Display(allProcesses);
 			 break;
 			 case 2:
-				clone = copyLinkedList(allProcesses);
-         			 setPid(clone);
-				system("clear");
-				printf("Scheduling Method: Shortest Job First Scheduling\n");
-				ShortestJobFirst(clone);
-				Display(clone);
+					system("clear");
+					printf("Scheduling Method: Shortest Job First Scheduling\n");
+					ShortestJobFirst(allProcesses);
+					Display(allProcesses);
 			 break;
 			 case 3:
-        			printf("Priority Scheduling\n");
+				 system("clear");
+				 printf("Scheduling Method: Priority Scheduling\n");
+				 PriorityScheduling(allProcesses);
+				 Display(allProcesses);
 			 break;
 			 case 4:
-       				 printf("Round Robin\n");
+        printf("Round Robin\n");
 			 break;
 			 case 5:
 				exit(0);
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
 				printf("ERROR: You type wrong choice\n");
 			 break;}
 }while(choice !=5);
-  
+
 return 0;
 }
 
@@ -112,10 +113,16 @@ void swapNode(struct node *a, struct node *b){
 	struct node * temp = createNode(0,0,0);
 	temp->burstTime = a->burstTime;
 	a->burstTime = b->burstTime;
-	b->burstTime = temp->burstTime;}
+	b->burstTime = temp->burstTime;
+	temp->priority = a->priority;
+	a->priority = b->priority;
+	b->priority = temp->priority;
+	temp->pid = a->pid;
+	a->pid = b->pid;
+	b->pid = temp->pid;}
 
 //Sorts linked list according to the burst time in descending.
-void sortLinkedList(struct node *allProcesses){
+void sortBurstTime(struct node *allProcesses){
 	struct node * temp;
 	struct node *temp2 = NULL;
 	int isSwapped;
@@ -134,66 +141,107 @@ void sortLinkedList(struct node *allProcesses){
 		}
 		temp2 = temp;
 	}
-	while(isSwapped == 1);
+		while(isSwapped == 1);
 }
+
 //The function iterates all the processes and calculate sum of the burst times
 //of all processes before each process and record it as a waiting time.
 void FirstComeFirstServe(struct node *allProcesses){
+		struct node *temp = allProcesses;
+		int time = 0;
+			while (temp != NULL){
+					temp->waitingTime = time;
+					time += temp->burstTime;
+					temp=temp->next;}
+	}
+
+//Implements the same algorithms in FCFS to the sorted linked list according to the burst time.
+void ShortestJobFirst(struct node *allProcesses){
+struct node *temp = allProcesses;
+		int time = 0;
+		sortBurstTime(temp);
+				while (temp != NULL){
+						temp->waitingTime = time;
+						time += temp->burstTime;
+						temp=temp->next;}
+				temp = allProcesses;
+				sortPID(temp);}
+//Implements the same algorithms in FCFS to the sorted linked list according to the priority.
+void PriorityScheduling(struct node *allProcesses){
 struct node *temp = allProcesses;
 int time = 0;
-while (temp != NULL){
-	temp->waitingTime = time;
-	time += temp->burstTime;
-	temp=temp->next;}
-}
-
-//Implements the same algorithms in FCFS to the sorted linked list.
-void ShortestJobFirst(struct node *allProcesses){
-	struct node *temp = allProcesses;
-	int time = 0;
-	sortLinkedList(temp);
+sortPriority(temp);
 	while (temp != NULL){
-	  temp->waitingTime = time;
-	  time += temp->burstTime;
-	  temp=temp->next;}
+			temp->waitingTime = time;
+			time += temp->burstTime;
+			temp=temp->next;
 }
+temp = allProcesses;
+sortPID(temp);}
 
-//Display function calculates average waiting time and displays
-//it with the waiting times of each process.
+ //Display function calculates average waiting time and displays
+ //it with the waiting times of each process.
 void Display(struct node *allProcesses){
-	struct node *temp = allProcesses;
-	int i = 0;
-	double sum = 0;
-	printf("Process Waiting Times:\n");
-	while (temp != NULL){
-	  printf("P%d: %d ms\n", temp->pid, temp->waitingTime);
-	  sum += temp->waitingTime;
-	  i++;
-	  temp=temp->next;}
-	printf("Average Waiting Time: %f ms\n", sum/i);
-}
-
-//Creates another node which carries the same data with the header of 
-//the real linked list then iterates the real linked list and creates
-//new node with data of each processes and insert them to the coppied 
-//header so we have copy of real linked list.
-struct node* copyLinkedList(struct node* allProcesses){
- struct node* head = allProcesses;
- struct node* copy = NULL;
- while (head != NULL){
-   if (copy == NULL)
-     copy = createNode(head->burstTime, head->arrivalTime, head->priority);
-   else
-     copy = insertBack(copy, head->burstTime, head->arrivalTime, head->priority);
-  head = head->next;}
- return copy;}
-
+			struct node *temp = allProcesses;
+			int i = 0;
+			double sum = 0;
+			printf("Process Waiting Times:\n");
+			while (temp != NULL){
+					printf("P%d: %d ms\n", temp->pid, temp->waitingTime);
+						sum += temp->waitingTime;
+						i++;
+						temp=temp->next;}
+			printf("Average Waiting Time: %f ms\n", sum/i);
+	}
 //Iterates linked list and assign process id for each process.
 void setPid(struct node *allProcesses){
 struct node *temp = allProcesses;
-int i = 1;
-while (temp != NULL){
-  temp->pid = i;
-  temp=temp->next;
-  i++;}
+		int i = 1;
+		while (temp != NULL){
+			temp->pid = i;
+			temp=temp->next;
+			i++;}
 }
+//Sorts linked list according to the priority in descending.
+void sortPriority(struct node *allProcesses){
+	struct node * temp;
+	struct node *temp2 = NULL;
+	int isSwapped;
+	do
+	{
+		temp = allProcesses;
+		isSwapped = 0;
+		while(temp->next != temp2)
+		{
+			if(temp->priority > temp->next->priority)
+			{
+					swapNode(temp,temp->next);
+					isSwapped = 1;
+			}
+			temp = temp->next;
+		}
+		temp2 = temp;
+	}
+		while(isSwapped == 1);
+}
+//Sorts linked list according to the pid in descending.
+void sortPID(struct node *allProcesses){
+	struct node * temp;
+	struct node *temp2 = NULL;
+	int isSwapped;
+	do
+	{
+		temp = allProcesses;
+		isSwapped = 0;
+		while(temp->next != temp2)
+		{
+			if(temp->pid > temp->next->pid)
+			{
+					swapNode(temp,temp->next);
+					isSwapped = 1;
+			}
+			temp = temp->next;
+		}
+		temp2 = temp;
+	}
+		while(isSwapped == 1);}
