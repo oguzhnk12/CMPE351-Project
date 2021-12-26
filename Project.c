@@ -23,6 +23,7 @@ void sortBurstTime(struct node *);
 void sortPriority(struct node *);
 void sortPID(struct node *);
 void swapNode(struct node *, struct node *);
+void sortArrivalTime(struct node *);
 
 
 int main(int argc, char* argv[])
@@ -65,7 +66,6 @@ if(processes == NULL){
 				system("clear");
 				printf("Scheduling Method: Shortest Job First Scheduling\n");
 				ShortestJobFirst(allProcesses);
-				Display(allProcesses);
 			  break;
 			  case 3:
 				system("clear");
@@ -166,12 +166,27 @@ return copy;}
 //of all processes before each process and record it as a waiting time.
 
 void FirstComeFirstServe(struct node *allProcesses){
-	struct node *temp = allProcesses;
-	 int time = 0;
-	 while (temp != NULL){
-		 temp->waitingTime = time;
-		 time += temp->burstTime;
-	 	 temp=temp->next;}
+struct node *temp = allProcesses;
+int time;
+sortArrivalTime(temp);
+temp->waitingTime = 0;
+if(temp->arrivalTime > 0)
+    time = temp->burstTime + temp->arrivalTime;
+else
+    time = temp->burstTime;
+temp = temp->next;
+while (temp != NULL){
+	temp->waitingTime = time - temp->arrivalTime;
+	if(temp->waitingTime < 0)
+	{
+	time += temp->waitingTime*(-1);
+	temp->waitingTime = 0;
+	}
+	time += temp->burstTime;
+	temp=temp->next;
+}
+temp = allProcesses;
+sortPID(temp);
 }
 
 //Implements the same algorithms in FCFS to the sorted linked list according to the burst time.
@@ -318,3 +333,22 @@ void sortPID(struct node *allProcesses){
 		temp2 = temp;
 	}
 		while(isSwapped == 1);}
+void sortArrivalTime(struct node *allProcesses){
+struct node * temp;
+struct node *temp2 = NULL;
+int isSwapped;
+do{
+ temp = allProcesses;
+ isSwapped = 0;
+ while(temp->next != temp2){
+	if(temp->arrivalTime > temp->next->arrivalTime){
+	 swapNode(temp,temp->next);
+	 isSwapped = 1;}
+	else if(temp->arrivalTime == temp->next->arrivalTime){
+		if(temp->pid > temp->next->pid){
+			swapNode(temp,temp->next);
+			isSwapped = 1;}}
+		temp = temp->next;}
+	temp2 = temp;
+		}
+while(isSwapped == 1);}
