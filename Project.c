@@ -254,32 +254,49 @@ sortPriority(temp);
 temp = allProcesses;
 sortPID(temp);}
 
-// RoundRobin function do not consider arrival times and has some promlems.
-// Problems will be tried to be resolved.
+// now RoundRobin function consider arrival times.
 void RoundRobin(struct node *allProcesses, int quantum){
 		struct node *temp;
 		struct node *clone = copyLinkedList(allProcesses);
 		setValues(clone);
-		int time = 0;
+		sortArrivalTime(clone);
+		int time = clone->arrivalTime;
 		int check;
 		do{
 		temp = clone;
 		check = 0;
-		while (temp->next != NULL){
+		while (temp != NULL){
 			if(temp->isComplete == 0){
-					temp->waitingTime += time - temp->completionTime;
+					temp->waitingTime += time - temp->completionTime - temp->arrivalTime;
+
+					if(temp->waitingTime < 0){
+						time += temp->waitingTime*-1;
+						temp->waitingTime = 0;}
+
 							if(temp->burstTime <= quantum){
 								temp->isComplete = 1;
-								time += temp->burstTime;}
+								time += temp->burstTime;
+								temp = temp->next;
+							}
 							else{
+								check = 1;
 								time += quantum;
 								temp->burstTime = temp->burstTime - quantum;
-								temp->completionTime += time;
-								check = 1;}
+								temp->completionTime = time;
+								temp->arrivalTime = 0;
+								if(temp->next == NULL)
+								temp = temp->next;
+								else
+								{
+									if(temp->next->arrivalTime <= time)
+									temp = temp->next;
+								}}
 						}
-			temp=temp->next;}
+			 else
+			 temp=temp->next;
+		 }
 		}while(check == 1);
-		temp = clone;
+		sortPID(clone);
 		Display(clone);
 }
 
@@ -373,7 +390,7 @@ void sortPID(struct node *allProcesses){
 		temp2 = temp;
 	}
 		while(isSwapped == 1);}
-		
+
 //Sorts linked list according to the arrival time in descending order.
 // If arrival times are equal then function sorts according to pid.
 void sortArrivalTime(struct node *allProcesses){
