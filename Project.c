@@ -1,5 +1,35 @@
 #include<stdio.h>
 #include <stdlib.h>
+#include<string.h>
+#include <getopt.h>
+
+#define BUFFER_SIZE 1000000
+
+	/*CMPE351-Operating System Project*/
+
+	/*CPU Scheduling Simulator*/
+
+
+	/*This program wrote in order to simulate service of processes by the CPU.
+	This program takes all information about processes from an input file, then
+	apply some CPU scheduling methods to get waiting time of each process and
+	average waiting time of all processes. Finally, displays the results and
+	write that results to the output file.*/
+
+	/*The CPU scheduling methods that the program implements are;
+
+	 -First Come First Serve Scheduling Method
+	 -Shortest Job First Scheduling Method(Non-preemtive)
+	 -Shortest Job First Scheduling Method(Preemtive)
+	 -Priority Scheduling Method(Non-preemtive)
+	 -Priority Scheduling Method(Preemtive)
+	 -Round Robin Scheduling Method*/
+
+
+	//Oguzhan Kaya
+	//21806449
+
+
 struct node{
 		int pid;
 		int burstTime;
@@ -10,6 +40,11 @@ struct node{
 		int isComplete;
 	 	struct node *next;};
 
+//Global variables;
+int timeQuantum;
+char buffer[BUFFER_SIZE] = "THIS IS THE OUTPUT FILE OF CPU SCHEDULING SIMULATION PROGRAM\n";
+
+// Function Prototypes
 struct node * createNode(int, int, int);
 struct node * insertBack(struct node *, int, int, int);
 struct node* copyLinkedList(struct node* );
@@ -17,38 +52,66 @@ void setValues(struct node *);
 void FirstComeFirstServe(struct node *);
 void ShortestJobFirst(struct node *);
 void PriorityScheduling(struct node *);
-void RoundRobin(struct node *, int );
+void RoundRobin(struct node *);
 void Display(struct node *);
 void sortBurstTime(struct node *);
 void sortPriority(struct node *);
 void sortPID(struct node *);
 void swapNode(struct node *, struct node *);
 void sortArrivalTime(struct node *);
-
+void returnMenu();
 
 int main(int argc, char* argv[])
 {
+	char* inputFileName = NULL;
+	char* outputFileName = NULL;
+	struct node *allProcesses = NULL;
+	int option;
+	int burst, arrival, priority;
+	FILE* output;
+	FILE* input;
 
-	//taking data from file
-	char* fileName = argv[1];
-  FILE* processes = fopen(fileName,"r");
-	if(processes == NULL)
+
+	while ((option = getopt(argc, argv, "f:o:")) != -1)
+	{
+		switch (option)
+		{
+		case 'f':
+			inputFileName = optarg;
+			break;
+		case 'o':
+			outputFileName = optarg;
+			break;
+		default:
+			printf("The valid command argument options are given below;\n");
+			printf("./Project.c –f input.txt –o output.txt\n");
+			return 0;
+			break;
+		}
+	}
+
+//Reading data from input file.
+input = fopen(inputFileName,"r");
+	if(input == NULL)
   {
-    printf("ERROR: %s does not exist\n",argv[1]);
-    return(0);
+    printf("ERROR: input file does not exist\n");
+    return 0;
   }
-
-  struct node *allProcesses = NULL;
-  int b, a, p;
-  while(!feof(processes))
+  while(!feof(input))
   {
-  fscanf(processes,"%d:%d:%d\n", &b, &a, &p);
-  allProcesses = insertBack(allProcesses, b, a, p);
+  fscanf(input,"%d:%d:%d\n", &burst, &arrival, &priority);
+  allProcesses = insertBack(allProcesses, burst, arrival, priority);
   }
-  fclose(processes);
+  fclose(input);
+//Data read.
 
-	int choice, choice2, quantum;
+	int menuChoice;
+	char fcfsTitle[] = "\nScheduling Method: First Come, First Served Scheduling\nProcess Waiting Times:\n",
+	     sjfTitle[] = "\nScheduling Method: Shortest Job First Scheduling\nProcess Waiting Times:\n",
+	     priorityTitle[] = "\nScheduling Method: Priority Scheduling\nProcess Waiting Times:\n",
+	     tempbuffer[99];
 	do{
+		system("clear");
 		printf("\t\t********************************************************\n");
 	  printf("\t\t\t\tCPU Scheduler Simulator\n");
 	  printf("Choose the Scheduling Method\n");
@@ -56,43 +119,105 @@ int main(int argc, char* argv[])
 		printf("2) Shortest-Job-First Scheduling\n");
 		printf("3) Priority Scheduling\n");
 		printf("4) Round-Robin Scheduling\n");
-		printf("5)End Program\n");
-		printf("Option>");
-	  scanf("%d",&choice);
-	  switch (choice) {
+		printf("5) End Program\n");
+		printf("Option> ");
+		scanf ("%d", &menuChoice);
+	  switch (menuChoice) {
 			   case 1:
 					system("clear");
-					printf("Scheduling Method: First Come, First Served Scheduling\n");
+					printf("%s",fcfsTitle);
+					strcat(buffer,fcfsTitle);
 					FirstComeFirstServe(allProcesses);
+					returnMenu();
 			   break;
 			   case 2:
 					system("clear");
-					printf("Scheduling Method: Shortest Job First Scheduling\n");
-					ShortestJobFirst(allProcesses);
+					printf("Choose the Preemtive Mode\n");
+				  printf("1) Non-preemtive Mode\n");
+				  printf("2) Preemtive Mode\n");
+					printf("Option> ");
+					scanf("%d",&menuChoice);
+						if(menuChoice == 1)
+							{
+								system("clear");
+								printf("%s",sjfTitle);
+								strcat(buffer,sjfTitle);
+								ShortestJobFirst(allProcesses);
+								returnMenu();
+							}
+						else if(menuChoice == 2)
+							{
+							  system("clear");
+								printf("Not yet\n");
+								returnMenu();
+							}
+						else
+						{
+							system("clear");
+							printf("ERROR: You type invalid choice.\nPlease try again.\n");
+						}
 				 break;
 				 case 3:
 					system("clear");
-					printf("Scheduling Method: Priority Scheduling\n");
-					PriorityScheduling(allProcesses);
-					Display(allProcesses);
+					printf("Choose the Preemtive Mode\n");
+				  printf("1) Non-preemtive Mode\n");
+				  printf("2) Preemtive Mode\n");
+					printf("Option> ");
+					scanf("%d",&menuChoice);
+						if(menuChoice == 1)
+							{
+									system("clear");
+									printf("%s",priorityTitle);
+									strcat(buffer,priorityTitle);
+									PriorityScheduling(allProcesses);
+									returnMenu();
+							}
+						else if(menuChoice == 2)
+							{
+									system("clear");
+									printf("Not yet\n");
+									returnMenu();
+							}
+						else
+							{
+									system("clear");
+									printf("ERROR: You type invalid choice.\nPlease try again.\n");
+							}
 				 break;
 				 case 4:
 				  system("clear");
-					printf("Enter the time_quantum\ntime_Quantum = ");
-					scanf("%d",&quantum);
-					printf("Scheduling Method: Round Robin Scheduling - time_quantum = %d\n", quantum);
-					RoundRobin(allProcesses, quantum);
+					printf("Enter the time_quantum\ntime_quantum = ");
+					scanf("%d",&timeQuantum);
+					system("clear");
+					sprintf(tempbuffer,"\nScheduling Method: Round Robin Scheduling - time_quantum = %d\nProcess Waiting Times:\n", timeQuantum);
+					printf("%s",tempbuffer);
+					strcat(buffer,tempbuffer);
+					RoundRobin(allProcesses);
+					returnMenu();
 				 break;
 				 case 5:
-					exit(0);
+				 //Writing results to output file.
+				 output = fopen(outputFileName,"w");
+				 fputs(buffer, output);
+				 fclose(output);
+				 //Results written.
+				 return 0;
 				 break;
 			   default:
-					printf("ERROR: You type wrong choice\n");
+				 	system("clear");
+					printf("ERROR: You type invalid choice.\nPlease try again.\n");
 				 break;
 	    }
-}while(choice !=5);
+}while(menuChoice != 5);
+return 0;
+}
 
-  return 0;
+void returnMenu()
+{
+	char r;
+	while ((r = getchar()) != EOF && r != '\n');
+	printf("Enter a character to return menu.");
+	getchar();
 }
 
 struct node * createNode(int b, int a, int p){
@@ -139,13 +264,17 @@ void Display(struct node *allProcesses){
 	  struct node *temp = allProcesses;
 		int i = 0;
 		double sum = 0;
-		printf("Process Waiting Times:\n");
+		char tempbuffer[99];
 		while (temp != NULL){
-		printf("P%d: %d ms\n", temp->pid, temp->waitingTime);
+		sprintf(tempbuffer, "P%d: %d ms\n", temp->pid, temp->waitingTime);
+		printf("%s",tempbuffer);
+		strcat(buffer,tempbuffer);
 		sum += temp->waitingTime;
 		i++;
 		temp=temp->next;}
-		printf("Average Waiting Time: %f ms\n", sum/i);
+		sprintf(tempbuffer,"Average Waiting Time: %f ms\n", sum/i);
+		printf("%s",tempbuffer);
+		strcat(buffer,tempbuffer);
 	temp = allProcesses;
 setValues(temp);}
 
@@ -282,8 +411,7 @@ void PriorityScheduling(struct node *allProcesses){
 	Display(clone);
 }
 
-// now RoundRobin function consider arrival times.
-void RoundRobin(struct node *allProcesses, int quantum){
+void RoundRobin(struct node *allProcesses){
 		struct node *temp;
 		struct node *clone = copyLinkedList(allProcesses);
 		setValues(clone);
@@ -301,15 +429,15 @@ void RoundRobin(struct node *allProcesses, int quantum){
 						time += temp->waitingTime*-1;
 						temp->waitingTime = 0;}
 
-							if(temp->burstTime <= quantum){
+							if(temp->burstTime <= timeQuantum){
 								temp->isComplete = 1;
 								time += temp->burstTime;
 								temp = temp->next;
 							}
 							else{
 								check = 1;
-								time += quantum;
-								temp->burstTime = temp->burstTime - quantum;
+								time += timeQuantum;
+								temp->burstTime = temp->burstTime - timeQuantum;
 								temp->completionTime = time;
 								temp->arrivalTime = 0;
 								if(temp->next == NULL)
@@ -348,7 +476,7 @@ void swapNode(struct node *a, struct node *b){
 	a->pid = b->pid;
 	b->pid = temp->pid;}
 
-//Sorts linked list according to the burst time in descending order.
+//Sorts linked list according to the burst time in ascending order.
 // If burst times are equal then function sorts according to pid.
 void sortBurstTime(struct node *allProcesses){
 	struct node * temp;
@@ -374,7 +502,7 @@ void sortBurstTime(struct node *allProcesses){
 		}
 while(isSwapped == 1);}
 
-//Sorts linked list according to the priority in descending order.
+//Sorts linked list according to the priority in ascending order.
 // If priority are equal then function sorts according to pid.
 void sortPriority(struct node *allProcesses){
 	struct node * temp;
@@ -400,7 +528,8 @@ void sortPriority(struct node *allProcesses){
 		}
 while(isSwapped == 1);
 }
-//Sorts linked list according to the pid in descending order.
+
+//Sorts linked list according to the pid in ascending order.
 void sortPID(struct node *allProcesses){
 	struct node * temp;
 	struct node *temp2 = NULL;
@@ -422,7 +551,7 @@ void sortPID(struct node *allProcesses){
 	}
 		while(isSwapped == 1);}
 
-//Sorts linked list according to the arrival time in descending order.
+//Sorts linked list according to the arrival time in ascending order.
 // If arrival times are equal then function sorts according to pid.
 void sortArrivalTime(struct node *allProcesses){
 	struct node * temp;
