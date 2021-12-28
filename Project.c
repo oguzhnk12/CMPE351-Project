@@ -239,20 +239,48 @@ void ShortestJobFirst(struct node *allProcesses){
 		Display(clone);
 	}
 
-// PriorityScheduling function do not consider arrival times.
-// Problem will be tried to be resolved.
+//It implements the same algorithm as sjf. However, the priority function sorts
+//the linked list by priority rather than burst time.
 void PriorityScheduling(struct node *allProcesses){
-struct node *temp = allProcesses;
-int time = 0;
-sortPriority(temp);
-	while (temp != NULL)
-	{
-			temp->waitingTime = time;
-			time += temp->burstTime;
-			temp=temp->next;
+	struct node *temp;
+	struct node *clone = copyLinkedList(allProcesses);
+	setValues(clone);
+	sortArrivalTime(clone);
+	int time = clone->arrivalTime -1;
+	sortPriority(clone);
+	int check , check2;
+	do{
+		time++;
+		check2 = 0;
+	do{
+		temp = clone;
+		check = 0;
+		while(temp != NULL){
+			if(temp->isComplete == 0)
+			{
+				if(temp->arrivalTime <= time){
+				temp->waitingTime += time - temp->arrivalTime;
+				time += temp->burstTime;
+				temp->isComplete = 1;
+				check = 1;
+				break;
+				}
+			}
+			temp = temp->next;
+		}
+		temp = clone;
+	}while(check == 1);
+	temp = clone;
+	while(temp != NULL){
+		if(temp->isComplete == 0){
+		check2 = 1;
+		break;}
+		temp = temp->next;
+	}
+}while(check2 == 1);
+	sortPID(clone);
+	Display(clone);
 }
-temp = allProcesses;
-sortPID(temp);}
 
 // now RoundRobin function consider arrival times.
 void RoundRobin(struct node *allProcesses, int quantum){
@@ -347,28 +375,31 @@ void sortBurstTime(struct node *allProcesses){
 while(isSwapped == 1);}
 
 //Sorts linked list according to the priority in descending order.
+// If priority are equal then function sorts according to pid.
 void sortPriority(struct node *allProcesses){
 	struct node * temp;
 	struct node *temp2 = NULL;
 	int isSwapped;
-	do
-	{
-		temp = allProcesses;
-		isSwapped = 0;
-		while(temp->next != temp2)
-		{
-			if(temp->priority > temp->next->priority)
-			{
+	do{
+			temp = allProcesses;
+			isSwapped = 0;
+			while(temp->next != temp2){
+				if(temp->priority > temp->next->priority)
+				{
 					swapNode(temp,temp->next);
 					isSwapped = 1;
+				}
+				else if(temp->priority == temp->next->priority){
+					if(temp->pid > temp->next->pid){
+						swapNode(temp,temp->next);
+						isSwapped = 1;
+					}}
+				temp = temp->next;
 			}
-			temp = temp->next;
+			temp2 = temp;
 		}
-		temp2 = temp;
-	}
-		while(isSwapped == 1);
+while(isSwapped == 1);
 }
-
 //Sorts linked list according to the pid in descending order.
 void sortPID(struct node *allProcesses){
 	struct node * temp;
