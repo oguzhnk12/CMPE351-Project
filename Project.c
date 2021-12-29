@@ -60,6 +60,8 @@ void sortPID(struct node *);
 void swapNode(struct node *, struct node *);
 void sortArrivalTime(struct node *);
 void returnMenu();
+void PriorityPreemtive(struct node *);
+void SJFPreemtive(struct node *);
 
 int main(int argc, char* argv[])
 {
@@ -107,8 +109,10 @@ input = fopen(inputFileName,"r");
 
 	int menuChoice;
 	char fcfsTitle[] = "\nScheduling Method: First Come, First Served Scheduling\nProcess Waiting Times:\n",
-	     sjfTitle[] = "\nScheduling Method: Shortest Job First Scheduling\nProcess Waiting Times:\n",
-	     priorityTitle[] = "\nScheduling Method: Priority Scheduling\nProcess Waiting Times:\n",
+	     sjfTitle[] = "\nScheduling Method: Shortest Job First Scheduling(Non-preemtive)\nProcess Waiting Times:\n",
+			 sjfpreemtiveTitle[] = "\nScheduling Method: Shortest Job First Scheduling(Preemtive)\nProcess Waiting Times:\n",
+	     priorityTitle[] = "\nScheduling Method: Priority Scheduling(Non-preemtive)\nProcess Waiting Times:\n",
+	     prioritypreemtiveTitle[] = "\nScheduling Method: Priority Scheduling(Preemtive)\nProcess Waiting Times:\n",
 	     tempbuffer[99];
 	do{
 		system("clear");
@@ -147,8 +151,10 @@ input = fopen(inputFileName,"r");
 							}
 						else if(menuChoice == 2)
 							{
-							  system("clear");
-								printf("Not yet\n");
+								system("clear");
+								printf("%s",sjfpreemtiveTitle);
+								strcat(buffer,sjfpreemtiveTitle);
+								SJFPreemtive(allProcesses);
 								returnMenu();
 							}
 						else
@@ -175,7 +181,9 @@ input = fopen(inputFileName,"r");
 						else if(menuChoice == 2)
 							{
 									system("clear");
-									printf("Not yet\n");
+									printf("%s",prioritypreemtiveTitle);
+									strcat(buffer,prioritypreemtiveTitle);
+									PriorityPreemtive(allProcesses);
 									returnMenu();
 							}
 						else
@@ -407,6 +415,113 @@ void PriorityScheduling(struct node *allProcesses){
 		temp = temp->next;
 	}
 }while(check2 == 1);
+	sortPID(clone);
+	Display(clone);
+}
+
+void SJFPreemtive(struct node *allProcesses){
+	struct node *temp;
+	struct node *clone = copyLinkedList(allProcesses);
+	setValues(clone);
+	sortArrivalTime(clone);
+	int time = clone->arrivalTime - 1;
+	int check, check2;
+	do{
+		time++;
+		check2 = 0;
+		do{
+			sortBurstTime(clone);
+			temp = clone;
+			check = 0;
+			while(temp != NULL){
+				if(temp->isComplete == 0)
+				{
+					if(temp->arrivalTime <= time){
+						temp->waitingTime += time - temp->arrivalTime - temp->completionTime;
+						time ++;
+						if(temp->burstTime == 1)
+						{
+							temp->isComplete = 1;
+						}
+						else
+						{
+							temp->burstTime = temp->burstTime - 1;
+							temp->completionTime = time;
+							temp->arrivalTime = 0;
+						}
+						check = 1;
+						break;
+					}
+				}
+				temp = temp->next;
+			}
+
+		}while(check == 1);
+		temp = clone;
+		while(temp != NULL)
+		{
+			if(temp->isComplete == 0)
+			{
+				check2 = 1;
+				break;
+			}
+			temp = temp->next;
+		}
+	}while(check2 == 1);
+
+	sortPID(clone);
+	Display(clone);
+}
+void PriorityPreemtive(struct node *allProcesses){
+	struct node *temp;
+	struct node *clone = copyLinkedList(allProcesses);
+	setValues(clone);
+	sortArrivalTime(clone);
+	int time = clone->arrivalTime - 1;
+	int check, check2;
+	do{
+		time++;
+		check2 = 0;
+		do{
+			sortPriority(clone);
+			temp = clone;
+			check = 0;
+			while(temp != NULL){
+				if(temp->isComplete == 0)
+				{
+					if(temp->arrivalTime <= time){
+						temp->waitingTime += time - temp->arrivalTime - temp->completionTime;
+						time ++;
+						if(temp->burstTime == 1)
+						{
+							temp->isComplete = 1;
+						}
+						else
+						{
+							temp->burstTime = temp->burstTime - 1;
+							temp->completionTime = time;
+							temp->arrivalTime = 0;
+						}
+						check = 1;
+						break;
+					}
+				}
+				temp = temp->next;
+			}
+
+		}while(check == 1);
+		temp = clone;
+		while(temp != NULL)
+		{
+			if(temp->isComplete == 0)
+			{
+				check2 = 1;
+				break;
+			}
+			temp = temp->next;
+		}
+	}while(check2 == 1);
+
 	sortPID(clone);
 	Display(clone);
 }
