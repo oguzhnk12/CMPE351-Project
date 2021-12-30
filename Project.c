@@ -31,13 +31,15 @@
 
 
 struct node{
-		int pid;
 		int burstTime;
 		int arrivalTime;
 		int priority;
-		int waitingTime;
-		int completionTime;
-		int isComplete;
+
+		int waitingTime;							//Initially zero.
+		int pid;											//process ID.
+		int contextSwitchTime;				//Initially zero.
+		int readyQueueState;  				//Initially equals to arrival time.
+
 	 	struct node *next;};
 
 //Global variables;
@@ -60,8 +62,10 @@ void sortPID(struct node *);
 void swapNode(struct node *, struct node *);
 void sortArrivalTime(struct node *);
 void returnMenu();
-void PriorityPreemtive(struct node *);
 void SJFPreemtive(struct node *);
+void PriorityPreemtive(struct node *);
+void sortReadyQueueState(struct node *);
+
 
 int main(int argc, char* argv[])
 {
@@ -260,8 +264,8 @@ void setValues(struct node *allProcesses){
 		while (temp != NULL){
 		temp->pid = i;
 		temp->waitingTime = 0;
-		temp->isComplete = 0;
-		temp->completionTime = 0;
+		temp->contextSwitchTime = 0;
+		temp->readyQueueState = temp->arrivalTime;
 		i++;
 		temp=temp->next;}
 }
@@ -291,16 +295,14 @@ setValues(temp);}
 //new node with data of each processes and insert them to the coppied
 //header so we have copy of real linked list.
 struct node* copyLinkedList(struct node* allProcesses){
-		struct node* head = allProcesses;
-    struct node* copy = NULL;
-    while (head != NULL){
-        if (copy == NULL){
-					copy = createNode(head->burstTime, head->arrivalTime, head->priority);
-				}
-				else{
-					copy = insertBack(copy, head->burstTime, head->arrivalTime, head->priority);
-				}
-					head = head->next;}
+	struct node* head = allProcesses;
+	struct node* copy = NULL;
+  while (head != NULL){
+      if (copy == NULL)
+			copy = createNode(head->burstTime, head->arrivalTime, head->priority);
+			else
+			copy = insertBack(copy, head->burstTime, head->arrivalTime, head->priority);
+			head = head->next;}
 return copy;}
 
 //The function sorts processes according to arrival time and iterates all the
@@ -309,24 +311,24 @@ return copy;}
 //to get the waiting time. Finally displays the waiting times of each processes
 //and average waiting time by calling Display function.
 void FirstComeFirstServe(struct node *allProcesses){
-				struct node *clone  = copyLinkedList(allProcesses);
-				setValues(clone);
-			 struct node *temp = clone;
-			 int time;
-			 sortArrivalTime(temp);
-			 temp->waitingTime = 0;
-			 	time = temp->burstTime + temp->arrivalTime;
-
-			 temp = temp->next;
-			 while (temp != NULL){
-			 		temp->waitingTime = time - temp->arrivalTime;
+		struct node *clone  = copyLinkedList(allProcesses);
+		setValues(clone);
+		struct node *temp = clone;
+		int time;
+	  sortArrivalTime(temp);
+		temp->waitingTime = 0;
+		time = temp->burstTime + temp->arrivalTime;
+		temp = temp->next;
+		while (temp != NULL){
+			temp->waitingTime = time - temp->arrivalTime;
 					if(temp->waitingTime < 0){
-						time += temp->waitingTime*(-1);
-						temp->waitingTime = 0;}
-			 		time += temp->burstTime;
-			 	temp=temp->next;}
-			sortPID(clone);
-			Display(clone);
+							time += temp->waitingTime*(-1);
+							temp->waitingTime = 0;
+					}
+			time += temp->burstTime;
+			temp=temp->next;}
+		sortPID(clone);
+		Display(clone);
 }
 
 //The function sorts processes according to burst time and iterates all the
@@ -336,44 +338,41 @@ void FirstComeFirstServe(struct node *allProcesses){
 //which of the processes in ready queue. Finally displays the waiting times of each processes
 //and average waiting time by calling Display function.
 void ShortestJobFirst(struct node *allProcesses){
-		struct node *temp;
-		struct node *clone = copyLinkedList(allProcesses);
-		setValues(clone);
-		sortArrivalTime(clone);
-		int time = clone->arrivalTime -1;
-		sortBurstTime(clone);
-		int check , check2;
+	struct node *temp;
+	struct node *clone = copyLinkedList(allProcesses);
+	setValues(clone);
+	sortArrivalTime(clone);
+	int time = clone->arrivalTime -1;
+	sortBurstTime(clone);
+	int check , control;
+	do{
+		  time++;
+		  control = 0;
 		do{
-			time++;
-			check2 = 0;
-		do{
-			temp = clone;
-			check = 0;
-			while(temp != NULL){
-				if(temp->isComplete == 0)
-				{
-					if(temp->arrivalTime <= time){
-					temp->waitingTime += time - temp->arrivalTime;
-					time += temp->burstTime;
-					temp->isComplete = 1;
-					check = 1;
-					break;
-					}
-				}
-				temp = temp->next;
-			}
-			temp = clone;
-		}while(check == 1);
-		temp = clone;
-		while(temp != NULL){
-			if(temp->isComplete == 0){
-			check2 = 1;
-			break;}
-			temp = temp->next;
-		}
-	}while(check2 == 1);
-		sortPID(clone);
-		Display(clone);
+		  temp = clone;
+		  check = 0;
+		 		while(temp != NULL){
+					if(temp->burstTime != 0){
+						if(temp->arrivalTime <= time){
+								temp->waitingTime += time - temp->arrivalTime;
+								time += temp->burstTime;
+								temp->burstTime = 0;
+								check = 1;
+								break;
+							}
+						}
+			  temp = temp->next;
+		  }
+	}while(check == 1);
+	temp = clone;
+	while(temp != NULL){
+		if(temp->burstTime != 0){
+		control = 1;
+		break;}
+		temp = temp->next;}
+}while(control == 1);
+	sortPID(clone);
+	Display(clone);
 	}
 
 //It implements the same algorithm as sjf. However, the priority function sorts
@@ -385,190 +384,177 @@ void PriorityScheduling(struct node *allProcesses){
 	sortArrivalTime(clone);
 	int time = clone->arrivalTime -1;
 	sortPriority(clone);
-	int check , check2;
+	int check , control;
 	do{
-		time++;
-		check2 = 0;
-	do{
-		temp = clone;
-		check = 0;
-		while(temp != NULL){
-			if(temp->isComplete == 0)
-			{
-				if(temp->arrivalTime <= time){
-				temp->waitingTime += time - temp->arrivalTime;
-				time += temp->burstTime;
-				temp->isComplete = 1;
-				check = 1;
-				break;
-				}
-			}
-			temp = temp->next;
-		}
-		temp = clone;
+		  time++;
+		  control = 0;
+		do{
+		  temp = clone;
+		  check = 0;
+		 		while(temp != NULL){
+					if(temp->burstTime != 0){
+						if(temp->arrivalTime <= time){
+								temp->waitingTime += time - temp->arrivalTime;
+								time += temp->burstTime;
+								temp->burstTime = 0;
+								check = 1;
+								break;
+							}
+						}
+			  temp = temp->next;
+		  }
 	}while(check == 1);
 	temp = clone;
 	while(temp != NULL){
-		if(temp->isComplete == 0){
-		check2 = 1;
+		if(temp->burstTime != 0){
+		control = 1;
 		break;}
-		temp = temp->next;
-	}
-}while(check2 == 1);
+		temp = temp->next;}
+}while(control == 1);
 	sortPID(clone);
 	Display(clone);
 }
 
+/*SJF Preemptive function has a similar approach with non-preemptive sjf.
+But it has one more loop for control, it sorts updated list again and again
+and also increments timer one by one.*/
 void SJFPreemtive(struct node *allProcesses){
 	struct node *temp;
 	struct node *clone = copyLinkedList(allProcesses);
 	setValues(clone);
 	sortArrivalTime(clone);
 	int time = clone->arrivalTime - 1;
-	int check, check2;
+	int check, control;
 	do{
 		time++;
-		check2 = 0;
+		control = 0;
 		do{
 			sortBurstTime(clone);
 			temp = clone;
 			check = 0;
 			while(temp != NULL){
-				if(temp->isComplete == 0)
-				{
+				if(temp->burstTime != 0){
 					if(temp->arrivalTime <= time){
-						temp->waitingTime += time - temp->arrivalTime - temp->completionTime;
-						time ++;
-						if(temp->burstTime == 1)
-						{
-							temp->isComplete = 1;
-						}
-						else
-						{
-							temp->burstTime = temp->burstTime - 1;
-							temp->completionTime = time;
+							temp->waitingTime += time - temp->arrivalTime - temp->contextSwitchTime;
+							time ++;
+							temp->burstTime--;
+							temp->contextSwitchTime = time;
 							temp->arrivalTime = 0;
-						}
-						check = 1;
-						break;
+							check = 1;
+							break;
 					}
 				}
 				temp = temp->next;
 			}
-
 		}while(check == 1);
 		temp = clone;
-		while(temp != NULL)
-		{
-			if(temp->isComplete == 0)
-			{
-				check2 = 1;
-				break;
+			while(temp != NULL){
+				if(temp->burstTime != 0){
+					control = 1;
+					break;}
+					temp = temp->next;
 			}
-			temp = temp->next;
-		}
-	}while(check2 == 1);
-
-	sortPID(clone);
-	Display(clone);
+		}while(control == 1);
+		sortPID(clone);
+		Display(clone);
 }
+
+/*It implements the same algorithm as sjf(preemtive). However, the preemtive
+priority function sorts the linked list by priority rather than burst time.*/
 void PriorityPreemtive(struct node *allProcesses){
 	struct node *temp;
 	struct node *clone = copyLinkedList(allProcesses);
 	setValues(clone);
 	sortArrivalTime(clone);
 	int time = clone->arrivalTime - 1;
-	int check, check2;
+	int check, control;
 	do{
 		time++;
-		check2 = 0;
+		control = 0;
 		do{
 			sortPriority(clone);
 			temp = clone;
 			check = 0;
 			while(temp != NULL){
-				if(temp->isComplete == 0)
-				{
+				if(temp->burstTime != 0){
 					if(temp->arrivalTime <= time){
-						temp->waitingTime += time - temp->arrivalTime - temp->completionTime;
-						time ++;
-						if(temp->burstTime == 1)
-						{
-							temp->isComplete = 1;
-						}
-						else
-						{
-							temp->burstTime = temp->burstTime - 1;
-							temp->completionTime = time;
+							temp->waitingTime += time - temp->arrivalTime - temp->contextSwitchTime;
+							time ++;
+							temp->burstTime--;
+							temp->contextSwitchTime = time;
 							temp->arrivalTime = 0;
-						}
-						check = 1;
-						break;
+							check = 1;
+							break;
 					}
 				}
 				temp = temp->next;
 			}
-
 		}while(check == 1);
 		temp = clone;
-		while(temp != NULL)
-		{
-			if(temp->isComplete == 0)
-			{
-				check2 = 1;
-				break;
+			while(temp != NULL){
+				if(temp->burstTime != 0){
+					control = 1;
+					break;}
+					temp = temp->next;
 			}
-			temp = temp->next;
-		}
-	}while(check2 == 1);
-
-	sortPID(clone);
-	Display(clone);
-}
-
-void RoundRobin(struct node *allProcesses){
-		struct node *temp;
-		struct node *clone = copyLinkedList(allProcesses);
-		setValues(clone);
-		sortArrivalTime(clone);
-		int time = clone->arrivalTime;
-		int check;
-		do{
-		temp = clone;
-		check = 0;
-		while (temp != NULL){
-			if(temp->isComplete == 0){
-					temp->waitingTime += time - temp->completionTime - temp->arrivalTime;
-
-					if(temp->waitingTime < 0){
-						time += temp->waitingTime*-1;
-						temp->waitingTime = 0;}
-
-							if(temp->burstTime <= timeQuantum){
-								temp->isComplete = 1;
-								time += temp->burstTime;
-								temp = temp->next;
-							}
-							else{
-								check = 1;
-								time += timeQuantum;
-								temp->burstTime = temp->burstTime - timeQuantum;
-								temp->completionTime = time;
-								temp->arrivalTime = 0;
-								if(temp->next == NULL)
-								temp = temp->next;
-								else
-								{
-									if(temp->next->arrivalTime <= time)
-									temp = temp->next;
-								}}
-						}
-			 else
-			 temp=temp->next;
-		 }
-		}while(check == 1);
+		}while(control == 1);
 		sortPID(clone);
 		Display(clone);
+}
+
+/*Uses sortReadyQueueState  to indentify the correct order(initially it sorts
+by arrival time). After assigning waiting time for a process, compares process
+burst time with time slice(quantum). if burst time  of the process is not lower
+than quantum time  repeats same algorithm untill its satisfy that condition.
+if it is lower or equal then makes burst time zero.
+Repeats that till all processes burst time will be zero.*/
+void RoundRobin(struct node *allProcesses){
+	struct node *temp;
+	struct node *clone = copyLinkedList(allProcesses);
+	setValues(clone);
+	sortArrivalTime(clone);
+	int time = clone->arrivalTime - 1;
+	int check, control;
+		do{
+			time++;
+			control = 0;
+		do{
+			sortReadyQueueState(clone);
+			temp = clone;
+			check = 0;
+			while(temp != NULL){
+				if(temp->burstTime != 0)
+				{
+					if(temp->readyQueueState <= time){
+						temp->waitingTime += (time - temp->arrivalTime - temp->contextSwitchTime);
+						if(temp->burstTime <= timeQuantum){
+              time += temp->burstTime;
+							temp->burstTime = 0;
+						}
+						else{
+								check = 1;
+	              time += timeQuantum;
+								temp->burstTime -= timeQuantum;
+								temp->contextSwitchTime = time;
+								temp->readyQueueState = time;
+								temp->arrivalTime = 0;
+						  break;
+							}
+					}
+				}
+				temp = temp->next;
+			}
+		}while(check == 1);
+		temp = clone;
+		while(temp != NULL){
+			if(temp->burstTime != 0){
+				control = 1;
+				break;}
+				temp = temp->next;
+		}
+	}while(control == 1);
+	sortPID(clone);
+	Display(clone);
 }
 
 //Swaps the data of the two nodes.
@@ -587,12 +573,18 @@ void swapNode(struct node *a, struct node *b){
 	temp->arrivalTime = a->arrivalTime;
 	a->arrivalTime = b->arrivalTime;
 	b->arrivalTime = temp->arrivalTime;
+	temp->contextSwitchTime = a->contextSwitchTime;
+	a->contextSwitchTime = b->contextSwitchTime;
+	b->contextSwitchTime = temp->contextSwitchTime;
+	temp->readyQueueState = a->readyQueueState;
+	a->readyQueueState = b->readyQueueState;
+	b->readyQueueState = temp->readyQueueState;
 	temp->pid = a->pid;
 	a->pid = b->pid;
 	b->pid = temp->pid;}
 
-//Sorts linked list according to the burst time in ascending order.
-// If burst times are equal then function sorts according to pid.
+/*Sorts linked list according to the burst time in ascending order.
+If burst times are equal then function sorts according to pid.*/
 void sortBurstTime(struct node *allProcesses){
 	struct node * temp;
 	struct node *temp2 = NULL;
@@ -617,8 +609,8 @@ void sortBurstTime(struct node *allProcesses){
 		}
 while(isSwapped == 1);}
 
-//Sorts linked list according to the priority in ascending order.
-// If priority are equal then function sorts according to pid.
+/*Sorts linked list according to the priority in ascending order.
+If priority are equal then function sorts according to pid.*/
 void sortPriority(struct node *allProcesses){
 	struct node * temp;
 	struct node *temp2 = NULL;
@@ -666,8 +658,8 @@ void sortPID(struct node *allProcesses){
 	}
 		while(isSwapped == 1);}
 
-//Sorts linked list according to the arrival time in ascending order.
-// If arrival times are equal then function sorts according to pid.
+/*Sorts linked list according to the arrival time in ascending order.
+If arrival times are equal then function sorts according to pid.*/
 void sortArrivalTime(struct node *allProcesses){
 	struct node * temp;
 	struct node *temp2 = NULL;
@@ -686,6 +678,46 @@ void sortArrivalTime(struct node *allProcesses){
 						swapNode(temp,temp->next);
 						isSwapped = 1;
 					}}
+				temp = temp->next;
+			}
+			temp2 = temp;
+		}
+while(isSwapped == 1);}
+
+/*Sorts linked list according to the ready queue state in ascending order.
+If ready queue states are equal then  the function sorts according
+to context switch time. If context switch times are also equal then
+function sorts according to pid. This function is design for identify when
+a interrupted process turn back to the cpu in round robin method.*/
+void sortReadyQueueState(struct node *allProcesses){
+	struct node * temp;
+	struct node *temp2 = NULL;
+	int isSwapped;
+	do{
+			temp = allProcesses;
+			isSwapped = 0;
+			while(temp->next != temp2){
+				if(temp->readyQueueState > temp->next->readyQueueState)
+				{
+					swapNode(temp,temp->next);
+					isSwapped = 1;
+				}
+				else if(temp->readyQueueState == temp->next->readyQueueState){
+					if(temp->contextSwitchTime > temp->next->contextSwitchTime)
+					{
+						swapNode(temp,temp->next);
+						isSwapped = 1;
+					}
+					else if(temp->contextSwitchTime == temp->next->contextSwitchTime)
+					{
+						if(temp->pid > temp->next->pid)
+						{
+							swapNode(temp,temp->next);
+							isSwapped = 1;
+						}
+					}
+
+				}
 				temp = temp->next;
 			}
 			temp2 = temp;
