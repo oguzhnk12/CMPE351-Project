@@ -327,6 +327,11 @@ void showResult(){
 		printf("Enter the time_quantum\ntime_quantum = ");
 		scanf("%d",&timeQuantum);
 		system("clear");
+		if(timeQuantum <= 0){
+			system(	"clear");
+			printf("time quantum value should be positive integer\nPlease try again");
+			return;
+		}
 		sprintf(tempbuffer,"\nScheduling Method: Round Robin Scheduling - time_quantum = %d\nProcess Waiting Times:\n", timeQuantum);
 		printf("%s",tempbuffer);
 		strcat(buffer,tempbuffer);
