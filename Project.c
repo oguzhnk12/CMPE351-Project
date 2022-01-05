@@ -84,7 +84,9 @@ void returnMenu();
 //Other function prototypes
 struct node * createNode(int, int, int);
 struct node * insertBack(struct node *, int, int, int);
+struct node *deleteFront(struct node *);
 struct node* copyLinkedList(struct node* );
+void clearLinkedList(struct node *);
 void setValues(struct node *);
 void FirstComeFirstServe(struct node *);
 void ShortestJobFirst(struct node *);
@@ -174,11 +176,17 @@ void mainMenu()
 			showResult();
 		break;
 		case '4':
+			
 		//Writing results to output file.
 		output = fopen(outputFileName,"w");
 		fputs(buffer, output);
 		fclose(output);
 		//Results written.
+		
+		//deleting linked list
+		clearLinkedList(allProcesses);
+		//deleted.
+		
 		exit(0);
 		break;
 		default:
@@ -340,6 +348,7 @@ void showResult(){
 	}
 }
 
+
 void returnMenu()
 {
 	char rtn;
@@ -349,15 +358,18 @@ void returnMenu()
 	system("clear");
 }
 
+
 struct node * createNode(int b, int a, int p){
 	struct node * temp;
   temp = (struct node *) malloc(sizeof(struct node));
+  memset(temp, 0, sizeof(temp));
   temp->burstTime = b;
 	temp->arrivalTime = a;
 	temp->priority = p;
   temp->next = NULL;
   return temp;
 }
+
 
 struct node * insertBack(struct node *header, int b, int a, int p){
 	struct node * temp = createNode(b, a, p);
@@ -373,6 +385,18 @@ struct node * insertBack(struct node *header, int b, int a, int p){
     headertemp=headertemp->next;
   headertemp->next = temp;
   return header;
+}
+
+struct node *deleteFront(struct node *header)
+{
+    struct node *temp;
+    if(header==NULL){
+        return header;
+    }
+    temp=header;
+	header= header->next;
+    free(temp);
+    return header;
 }
 
 
@@ -460,6 +484,10 @@ void FirstComeFirstServe(struct node *allProcesses){
 	}
 	sortPID(clone);
 	Display(clone);
+	
+	//deleting linked list
+	clearLinkedList(clone);
+	//deleted
 }
 
 
@@ -508,6 +536,10 @@ void ShortestJobFirst(struct node *allProcesses){
 	}while(control == 1);
 	sortPID(clone);
 	Display(clone);
+	
+	//deleting linked list
+	clearLinkedList(clone);
+	//deleted
 }
 
 
@@ -552,6 +584,10 @@ void PriorityScheduling(struct node *allProcesses){
 	}while(control == 1);
 	sortPID(clone);
 	Display(clone);
+	
+	//deleting linked list
+	clearLinkedList(clone);
+	//deleted
 }
 
 
@@ -597,8 +633,12 @@ void SJFPreemtive(struct node *allProcesses){
 			temp = temp->next;
 		}
 		}while(control == 1);
-		sortPID(clone);
-		Display(clone);
+		sortPID(clone);Display(clone);
+		
+	//deleting linked list
+	clearLinkedList(clone);
+	//deleted
+		
 }
 
 /*It implements the same algorithm as sjf(preemtive). However, the preemtive
@@ -644,6 +684,11 @@ void PriorityPreemtive(struct node *allProcesses){
 		}while(control == 1);
 		sortPID(clone);
 		Display(clone);
+		
+	//deleting linked list
+	clearLinkedList(clone);
+	//deleted
+	
 }
 
 
@@ -701,6 +746,10 @@ void RoundRobin(struct node *allProcesses){
 	}while(control == 1);
 	sortPID(clone);
 	Display(clone);
+	
+	//deleting linked list
+	clearLinkedList(clone);
+	//deleted
 }
 
 
@@ -882,4 +931,13 @@ void sortReadyQueueState(struct node *allProcesses){
 		}
 		temp2 = temp;
 }while(isSwapped == 1);
+}
+
+/*Deletes all the nodes from linked list*/
+void clearLinkedList(struct node *allProcesses){
+	struct node *temp =allProcesses;
+	while(temp != NULL){
+	temp = deleteFront(temp);
+	temp = temp->next;
+	}	
 }
